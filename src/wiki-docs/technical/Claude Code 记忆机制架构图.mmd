@@ -1,0 +1,54 @@
+flowchart LR
+    subgraph Modes[运行模式分派 · loadMemoryPrompt]
+        direction TB
+        L[loadMemoryPrompt] -->|KAIROS && active| KD[buildAssistantDailyLogPrompt<br/>logs/YYYY/MM/YYYY-MM-DD.md]
+        L -->|TEAMMEM && enabled| KC[buildCombinedMemoryPrompt<br/>private + team 双索引]
+        L -->|autoEnabled| KI[buildMemoryLines<br/>auto memory]
+        L -->|否则|null + tengu_memdir_disabled
+    end
+
+    subgraph Types[记忆类型 MEMORY_TYPES]
+        direction TB
+        T1[user] --> T1f{frontmatter<br/>name/description/type}
+        T2[feedback] -->|Why + How to apply| T1f
+        T3[project] -->|相对日期转换绝对日期| T1f
+        T4[reference] --> T1f
+    end
+
+    subgraph Scopes[作用域 Scope]
+        direction TB
+        S1[auto 主会话<br/>projects/hash/memory]
+        S2[team 仓库级<br/>memory/team + 远端同步]
+        S3[agent user  agent-memory/user]
+        S4[agent project  agent-memory/project]
+        S5[agent local  agent-memory-local]
+        S6[claudemd  User/Project/Local/Managed]
+    end
+
+    subgraph Writers[写入主体]
+        direction TB
+        W1[主 agent /remember]
+        W2[extractMemories<br/>stop hook 增量]
+        W3[autoDream<br/>stop hook 低频整合]
+        W4[/dream KAIROS 蒸馏]
+        W5[sessionMemory 快照]
+    end
+
+    subgraph Recall[召回注入]
+        direction TB
+        R1[用户 Query]
+        R2[scanMemoryFiles<br/>frontmatter 清单 <200]
+        R3[Sonnet sideQuery<br/>5 槽 JSON Schema]
+        R4[readMemoriesForSurfacing<br/>200 行 / 4KB 截断]
+        R1 --> R2 --> R3 --> R4
+        R4 -->|relevant_memories 附件| R5[注入 user message]
+    end
+
+    Modes --> Types
+    Modes --> Scopes
+    Modes --> Writers
+    Writers -->|写主题文件 + MEMORY.md| Scopes
+    Scopes -->|系统提示词索引| INJ1[system 提示词]
+    Recall -->|正文| INJ2[messages]
+    INJ1 --> REQ[API 请求体]
+    INJ2 --> REQ
