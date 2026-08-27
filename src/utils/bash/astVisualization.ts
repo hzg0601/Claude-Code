@@ -128,21 +128,27 @@ export function bashAstToTree(
   const maxTextLength = options.maxTextLength ?? 120
   const lines: string[] = []
 
-  function visit(node: SerializedBashAstNode, prefix: string, isLast: boolean): void {
+  function visit(
+    node: SerializedBashAstNode,
+    prefix: string,
+    isLast: boolean,
+    isRoot = false,
+  ): void {
     const text =
       node.text.length > maxTextLength
         ? `${node.text.slice(0, maxTextLength)}…`
         : node.text
-    const branch = prefix === '' ? '' : isLast ? '└─ ' : '├─ '
+    const branch = isRoot ? '' : isLast ? '└─ ' : '├─ '
     lines.push(`${prefix}${branch}${node.type}: ${JSON.stringify(text)}`)
 
-    const childPrefix =
-      prefix === '' ? '' : `${prefix}${isLast ? '   ' : '│  '}`
+    const childPrefix = isRoot
+      ? ''
+      : `${prefix}${isLast ? '   ' : '│  '}`
     node.children.forEach((child, index) => {
       visit(child, childPrefix, index === node.children.length - 1)
     })
   }
 
-  visit(ast, '', true)
+  visit(ast, '', true, true)
   return `${lines.join('\n')}\n`
 }
