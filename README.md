@@ -21,6 +21,27 @@ bun run version   # 验证版本
 
 ---
 
+## BashTool AST 可视化
+
+可以使用内置的 Bash 解析器生成 BashTool 命令的完整 AST。默认输出 Mermaid
+流程图，可直接粘贴到支持 Mermaid 的 Markdown 查看器中：
+
+```bash
+bun run bash:ast -- 'find . -name "*.ts" | grep -v node_modules'
+```
+
+也可以输出完整 JSON 或终端树：
+
+```bash
+bun run bash:ast -- --format json 'git status'
+bun run bash:ast -- --format tree 'cat file.txt > output.txt'
+```
+
+JSON 保留每个节点的类型、原始文本、UTF-8 字节范围和子节点；Mermaid 和树形
+输出只缩短节点标签文本，不会省略节点或边。
+
+---
+
 ## 从源码中发现的 7 大隐藏功能
 
 通过阅读还原后的 1,987 个 TypeScript 源文件，我们发现了大量未公开的隐藏功能。这些功能通过**编译开关**（`feature()`）和**用户类型**（`USER_TYPE`）进行门控，外部发布版中大部分被裁剪。

@@ -17,7 +17,8 @@
   "scripts": {
     "dev": "bun run ./src/dev-entry.ts",
     "start": "bun run ./src/dev-entry.ts",
-    "version": "bun run ./src/dev-entry.ts --version"
+    "version": "bun run ./src/dev-entry.ts --version",
+    "bash:ast": "bun run ./scripts/bash-ast.ts"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "*",
