@@ -55,6 +55,7 @@ Claude Code 的记忆不是单一存储，而是三套**并行、隔离**的系�
 **三大支柱一句话**：`B`（自动记忆）是默认的持久记忆；`C`（子 agent 记忆）是多 agent 场景下的隔离记忆；`A`（静态层）是项目/用户规则。
 
 **两套 `MemoryType` 需分清**：
+
 - **claudemd 静态层**（`src/utils/memory/types.ts`）：`User / Project / Local / Managed / AutoMem / TeamMem`（TeamMem 由 `feature('TEAMMEM')` 条件包含）。
 - **memdir 自动记忆**（`src/memdir/memoryTypes.ts`）：`user / feedback / project / reference`（小写，带 frontmatter 的类型字段）。
 
@@ -79,14 +80,15 @@ type: <user|feedback|project|reference>
 <正文 — 对 feedback/project 类型，正文按 "rule/fact，然后 Why / How to apply" 组织>
 ```
 
-| 类型 | 用途 | 特殊要求 |
-|---|---|---|
-| **user** | 用户画像：身份、偏好、领域、背景 | 无 |
-| **feedback** | 用户对 Agent 行为的反馈（正向/负向） | 必须含 **Why** 与 **How to apply** 两节 |
-| **project** | 项目目标、进展、决策、约束、截止日期 | 相对日期 → **绝对日期** 转换 |
-| **reference** | 外部系统位置（URL、dashboards、tickets、Slack 频道） | 无 |
+| 类型                | 用途                                                 | 特殊要求                                           |
+| ------------------- | ---------------------------------------------------- | -------------------------------------------------- |
+| **user**      | 用户画像：身份、偏好、领域、背景                     | 无                                                 |
+| **feedback**  | 用户对 Agent 行为的反馈（正向/负向）                 | 必须含**Why** 与 **How to apply** 两节 |
+| **project**   | 项目目标、进展、决策、约束、截止日期                 | 相对日期 →**绝对日期** 转换                 |
+| **reference** | 外部系统位置（URL、dashboards、tickets、Slack 频道） | 无                                                 |
 
 **两条提示词变体**（`memoryTypes.ts`）：
+
 - `TYPES_SECTION_INDIVIDUAL`：单机 / auto 模式，无 `<scope>` 标签。
 - `TYPES_SECTION_COMBINED`：TEAMMEM 团队模式，每个 `<type>` 块内嵌 `<scope>` 指引——**user 始终 private（私有）**，**feedback 偏向 private**，**project / reference 偏向 team（共享）**。
 
@@ -96,14 +98,14 @@ type: <user|feedback|project|reference>
 
 claudemd 的 `MemoryType` 实际是**加载作用域**（见 §3），不是语义分类。其路径解析见 [`src/utils/config.ts:getMemoryPath`](src/utils/config.ts#L1779-L1807)：
 
-| claudemd 类型 | 路径 | 语义 |
-|---|---|---|
-| `Managed` | `/etc/claude-code/CLAUDE.md`（Linux）或平台等价目录 | 全用户全局指令 |
-| `User` | `~/.claude/CLAUDE.md` | 个人全局指令（所有项目） |
-| `Project` | `<cwd>/CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/rules/*.md` | 项目指令，随仓库走、**可提交 git** |
-| `Local` | `<cwd>/CLAUDE.local.md` | 个人项目指令，**不入 git** |
-| `AutoMem` | `<autoMemPath>/MEMORY.md` | 自动记忆索引 |
-| `TeamMem` | `<autoMemPath>/team/MEMORY.md` | 团队记忆索引 |
+| claudemd 类型 | 路径                                                               | 语义                                     |
+| ------------- | ------------------------------------------------------------------ | ---------------------------------------- |
+| `Managed`   | `/etc/claude-code/CLAUDE.md`（Linux）或平台等价目录              | 全用户全局指令                           |
+| `User`      | `~/.claude/CLAUDE.md`                                            | 个人全局指令（所有项目）                 |
+| `Project`   | `<cwd>/CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/rules/*.md` | 项目指令，随仓库走、**可提交 git** |
+| `Local`     | `<cwd>/CLAUDE.local.md`                                          | 个人项目指令，**不入 git**         |
+| `AutoMem`   | `<autoMemPath>/MEMORY.md`                                        | 自动记忆索引                             |
+| `TeamMem`   | `<autoMemPath>/team/MEMORY.md`                                   | 团队记忆索引                             |
 
 ---
 
@@ -124,11 +126,11 @@ claudemd 的 `MemoryType` 实际是**加载作用域**（见 §3），不是语�
 
 定义于 [`src/tools/AgentTool/agentMemory.ts:13`](src/tools/AgentTool/agentMemory.ts#L13)：`AgentMemoryScope = 'user' | 'project' | 'local'`。**用户问题中提到的 "user/project/local" 作用域主要对应这一套子 agent 记忆系统。**
 
-| Scope | 目录（`getAgentMemoryDir`） | 语义 |
-|---|---|---|
-| **user** | `~/.claude/agent-memory/{agentType}/` | 全局 Agent 知识，跨所有项目共享（"boldly canonicalize"） |
-| **project** | `<cwd>/.claude/agent-memory/{agentType}/` | 项目特定知识，随仓库走、**可提交进 git** |
-| **local** | `<cwd>/.claude/agent-memory-local/{agentType}/`（支持 `CLAUDE_CODE_REMOTE_MEMORY_DIR` 重定向） | 本机+本项目专属，**不入 git**（"tailor to this project and machine"） |
+| Scope             | 目录（`getAgentMemoryDir`）                                                                      | 语义                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **user**    | `~/.claude/agent-memory/{agentType}/`                                                            | 全局 Agent 知识，跨所有项目共享（"boldly canonicalize"）                    |
+| **project** | `<cwd>/.claude/agent-memory/{agentType}/`                                                        | 项目特定知识，随仓库走、**可提交进 git**                              |
+| **local**   | `<cwd>/.claude/agent-memory-local/{agentType}/`（支持 `CLAUDE_CODE_REMOTE_MEMORY_DIR` 重定向） | 本机+本项目专属，**不入 git**（"tailor to this project and machine"） |
 
 - `{agentType}` 中的 `:` 会被替换成 `-`（插件命名空间化）。
 - `loadAgentMemoryPrompt(agentType, scope)`（agentMemory.ts:138）为每个子 agent 注入对应 scope 的记忆指令，含 `scopeNote`，最终走 `buildMemoryPrompt`。
@@ -148,16 +150,17 @@ claudemd 的 `MemoryType` 实际是**加载作用域**（见 §3），不是语�
 
 记忆可由六个主体写入，它们**互补而非替代**：
 
-| 主体 | 触发点 | 本质 |
-|---|---|---|
-| **主 agent** | 用户 `/remember` 或用户明确要求记住时 | system 记忆指令指导它直接 `Write` 主题文件 + 更新 MEMORY.md |
-| **extractMemories**（后台提取） | stop hook（自然回合结束） | turn-end 增量提取：把该回合新信息 fork 出子模型挑选、写回 |
-| **autoDream**（后台整合） | stop hook（自然回合结束） | 低频跨会话整合：consolidate 分散记忆成精炼主题文件（dream 命令） |
-| **/remember skill** | 用户主动 `/remember` | ant-only（`USER_TYPE !== 'ant'` 时 no-op）；是记忆**审查/迁移入 CLAUDE.md** 工具，不是 writer |
-| **/dream skill**（KAIROS） | 定时/手动 | 对 append-only 日志**蒸馏**成主题记忆（本快照为 feature-gated 空壳） |
-| **sessionMemory** | post-sampling hook | **会话记忆快照**（供 compaction），与面向用户的持久记忆语义不同 |
+| 主体                                  | 触发点                                 | 本质                                                                                                  |
+| ------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **主 agent**                    | 用户`/remember` 或用户明确要求记住时 | system 记忆指令指导它直接`Write` 主题文件 + 更新 MEMORY.md                                          |
+| **extractMemories**（后台提取） | stop hook（自然回合结束）              | turn-end 增量提取：把该回合新信息 fork 出子模型挑选、写回                                             |
+| **autoDream**（后台整合）       | stop hook（自然回合结束）              | 低频跨会话整合：consolidate 分散记忆成精炼主题文件（dream 命令）                                      |
+| **/remember skill**             | 用户主动`/remember`                  | ant-only（`USER_TYPE !== 'ant'` 时 no-op）；是记忆**审查/迁移入 CLAUDE.md** 工具，不是 writer |
+| **/dream skill**（KAIROS）      | 定时/手动                              | 对 append-only 日志**蒸馏**成主题记忆（本快照为 feature-gated 空壳）                            |
+| **sessionMemory**               | post-sampling hook                     | **会话记忆快照**（供 compaction），与面向用户的持久记忆语义不同                                 |
 
 **关键区分**：
+
 - `extractMemories`（提取新信息）与 `autoDream`（整合既有记忆）是**配合关系**：前者把点滴信息写新文件，后者定期合并去重。二者都复用 `runForkedAgent`，但**互不调用、互不感知**，共享 `createAutoMemCanUseTool`。
 - `/remember`（本快照）**不写持久记忆文件**，而是引导用户把重要约定**迁移进 CLAUDE.md**（审查 + promote）。
 - `sessionMemory` 虽写 "memory" 文件，但语义是**会话/压缩上下文**，服务 compaction，与面向用户的持久记忆不同。
@@ -225,6 +228,7 @@ auto 单机         ⊆ 其 上可叠加 TEAMMEM     （团队是 auto 的超集
 ### 6.1 two-step（默认，非 skipIndex）
 
 两步写入（`buildMemoryLines` 的 howToSave）：
+
 - **Step 1**：把记忆写成本身的文件（带 frontmatter：name/description/type）。
 - **Step 2**：在该目录的 `MEMORY.md` 加一行指针 `- [Title](file.md) — one-line hook`（每行 <150 字符，无 frontmatter，正文绝不写入索引）。
 
@@ -271,6 +275,7 @@ If the user explicitly asks you to remember…/forget…
 ### 7.2 `buildMemoryPrompt`（[`src/memdir/memdir.ts:272`](src/memdir/memdir.ts#L272)，子 agent 版）
 
 在 `buildMemoryLines` 的指令段后 **push 一段 `## MEMORY.md`**，把索引全文灌进提示词。它服务的"读者"是**子 agent**——子 agent **没有主会话的 `getClaudeMds()` 索引加载链路**，必须在此显式载入索引：
+
 1. 该记忆目录的完整可用索引（`t.content`）。
 2. 截断后的边界感知（经 `truncateEntrypointContent`，基于真实字节/行数给出精确诊断）。
 3. telemetry：`logMemoryDirCounts` 埋 `tengu_memdir_loaded`，区分 `displayName === 'auto memory' ? 'auto' : 'agent'`。
@@ -280,6 +285,7 @@ If the user explicitly asks you to remember…/forget…
 见 §5。额外职责：`ensureMemoryDirExists` 保证目录存在、`logMemoryDirCounts` 遥测、`teamMemPaths`/`teamMemPrompts` 条件 require、Cowork env 策略注入、禁用时返回 null 使 memory 段整体消失。
 
 **3 个调用点**：
+
 1. [`src/constants/prompts.ts:476`](src/constants/prompts.ts#L476) — PROACTIVE/KAIROS 扁平提示词分支。
 2. [`src/constants/prompts.ts:495`](src/constants/prompts.ts#L495) — `systemPromptSection('memory', () => loadMemoryPrompt())`（主动态段）。
 3. [`src/QueryEngine.ts:318`](src/QueryEngine.ts#L318) — SDK/自定义提示词路径（`hasAutoMemPathOverride()` 时附加记忆机制提示词）。
@@ -344,6 +350,7 @@ const result = await sideQuery({
 ```
 
 `SELECT_MEMORIES_SYSTEM_PROMPT` 原文要点：
+
 - 返回**最多 5 个**文件名；**只挑确信有帮助的**（"Be selective and discerning"）。
 - 不确定就不选；没有明确有用的就返回空表。
 - 若提供 `recentTools`：**不要选**这些工具的使用参考/API 文档类记忆；但含 **warnings/gotchas/known issues** 类则**要选**（正在用正是它们要紧的时候）。
@@ -379,32 +386,32 @@ const result = await sideQuery({
 
 ### 9.3 注入对象矩阵
 
-| 注入对象 | 内容 | 机制 |
-|---|---|---|
-| 主会话 system | MEMORY.md 索引 | `loadMemoryPrompt` + `getClaudeMds` |
-| 主会话 user message | 召回正文 | `relevant_memories` `<system-reminder>` 附件 |
-| 子 agent system | MEMORY.md 索引全文 | `loadAgentMemoryPrompt` → `buildMemoryPrompt` |
-| @agent 提及的子 agent | 该 agent 记忆目录召回 | `getRelevantMemoryAttachments` 定向搜索 |
-| 经典 CLAUDE.md/rules | 全部内容 | `context.ts:getUserContext` → `claudeMd`（memoize 整个会话） |
-| MCP 指令 | MCP server `instructions` | `systemPromptSection('mcp_instructions')`，独立于记忆 |
+| 注入对象              | 内容                       | 机制                                                              |
+| --------------------- | -------------------------- | ----------------------------------------------------------------- |
+| 主会话 system         | MEMORY.md 索引             | `loadMemoryPrompt` + `getClaudeMds`                           |
+| 主会话 user message   | 召回正文                   | `relevant_memories` `<system-reminder>` 附件                  |
+| 子 agent system       | MEMORY.md 索引全文         | `loadAgentMemoryPrompt` → `buildMemoryPrompt`                |
+| @agent 提及的子 agent | 该 agent 记忆目录召回      | `getRelevantMemoryAttachments` 定向搜索                         |
+| 经典 CLAUDE.md/rules  | 全部内容                   | `context.ts:getUserContext` → `claudeMd`（memoize 整个会话） |
+| MCP 指令              | MCP server`instructions` | `systemPromptSection('mcp_instructions')`，独立于记忆           |
 
 ---
 
 ## 10. 存储位置汇总
 
-| 系统 | 路径 | 内容 |
-|---|---|---|
-| 自动记忆 auto | `~/.claude/projects/{hash}/memory/` | user/feedback/project/reference 主题文件 + `MEMORY.md` 索引 |
-| 团队记忆 team | `…/memory/team/` | 与 auto 同构，含 `team/MEMORY.md` 索引 |
-| KAIROS 日志 | `…/memory/logs/YYYY/MM/YYYY-MM-DD.md` | append-only 每日日志 |
-| 子 agent user | `~/.claude/agent-memory/{agentType}/` | 全局 Agent 知识 |
-| 子 agent project | `<cwd>/.claude/agent-memory/{agentType}/` | 项目知识（可提交 git） |
-| 子 agent local | `<cwd>/.claude/agent-memory-local/{agentType}/` | 本机+项目专属（不入库） |
-| claudemd Managed | `/etc/claude-code/CLAUDE.md` | 全用户全局指令 |
-| claudemd User | `~/.claude/CLAUDE.md` + `~/.claude/rules/*.md` | 个人全局指令 |
-| claudemd Project | `<cwd>/CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/rules/*.md` `CLAUDE.local.md` | 项目指令 |
-| autoDream 锁 | `…/memory/.consolidate-lock` | mtime=lastConsolidatedAt 的整合锁 |
-| 会话记忆 | `~/.claude/session-memory/…` | 供 compaction 的快照（非持久用户记忆） |
+| 系统             | 路径                                                                                   | 内容                                                         |
+| ---------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 自动记忆 auto    | `~/.claude/projects/{hash}/memory/`                                                  | user/feedback/project/reference 主题文件 +`MEMORY.md` 索引 |
+| 团队记忆 team    | `…/memory/team/`                                                                    | 与 auto 同构，含`team/MEMORY.md` 索引                      |
+| KAIROS 日志      | `…/memory/logs/YYYY/MM/YYYY-MM-DD.md`                                               | append-only 每日日志                                         |
+| 子 agent user    | `~/.claude/agent-memory/{agentType}/`                                                | 全局 Agent 知识                                              |
+| 子 agent project | `<cwd>/.claude/agent-memory/{agentType}/`                                            | 项目知识（可提交 git）                                       |
+| 子 agent local   | `<cwd>/.claude/agent-memory-local/{agentType}/`                                      | 本机+项目专属（不入库）                                      |
+| claudemd Managed | `/etc/claude-code/CLAUDE.md`                                                         | 全用户全局指令                                               |
+| claudemd User    | `~/.claude/CLAUDE.md` + `~/.claude/rules/*.md`                                     | 个人全局指令                                                 |
+| claudemd Project | `<cwd>/CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/rules/*.md` `CLAUDE.local.md` | 项目指令                                                     |
+| autoDream 锁     | `…/memory/.consolidate-lock`                                                        | mtime=lastConsolidatedAt 的整合锁                            |
+| 会话记忆         | `~/.claude/session-memory/…`                                                        | 供 compaction 的快照（非持久用户记忆）                       |
 
 **记忆目录启动判断链**（[`src/memdir/paths.ts:isAutoMemoryEnabled`](src/memdir/paths.ts#L30)）：
 
@@ -465,41 +472,41 @@ settings.json 的 autoMemoryEnabled          → 按配置
 
 ### 12.1 GrowthBook 远端开关（`getFeatureValue_CACHED_MAY_BE_STALE` / `getDynamicConfig_CACHED_MAY_BE_STALE`）
 
-| 开关 | 默认 | 作用 |
-|---|---|---|
-| `tengu_passport_quail` | **false** | `EXTRACT_MEMORIES` 后台提取主门控 |
-| `tengu_slate_thimble` | false | 允许非交互会话（`-p`/SDK）也跑提取 |
-| `tengu_bramble_lintel` | 1 | extract 节流：每 N 个合格回合一次 |
-| `tengu_moth_copse` | **false** | skipIndex 模式 + 召回预取门控 + 过滤 claudemd 中 AutoMem/TeamMem |
-| `tengu_herring_clock` | false | 团队记忆总开关 |
-| `tengu_onyx_plover` | enabled=false | autoDream 开关（settings `autoDreamEnabled` 未设时） |
-| `tengu_session_memory` | false | 会话记忆（compaction notes）门控 |
-| `tengu_sm_config` | {} | 会话记忆远端配置（默认 10k/5k/3） |
-| `tengu_paper_halyard` | false | 让 `getClaudeMds` 跳过 Project/Local |
-| `tengu_coral_fern` | false | "Searching past context" 段 |
+| 开关                     | 默认            | 作用                                                             |
+| ------------------------ | --------------- | ---------------------------------------------------------------- |
+| `tengu_passport_quail` | **false** | `EXTRACT_MEMORIES` 后台提取主门控                              |
+| `tengu_slate_thimble`  | false           | 允许非交互会话（`-p`/SDK）也跑提取                             |
+| `tengu_bramble_lintel` | 1               | extract 节流：每 N 个合格回合一次                                |
+| `tengu_moth_copse`     | **false** | skipIndex 模式 + 召回预取门控 + 过滤 claudemd 中 AutoMem/TeamMem |
+| `tengu_herring_clock`  | false           | 团队记忆总开关                                                   |
+| `tengu_onyx_plover`    | enabled=false   | autoDream 开关（settings`autoDreamEnabled` 未设时）            |
+| `tengu_session_memory` | false           | 会话记忆（compaction notes）门控                                 |
+| `tengu_sm_config`      | {}              | 会话记忆远端配置（默认 10k/5k/3）                                |
+| `tengu_paper_halyard`  | false           | 让`getClaudeMds` 跳过 Project/Local                            |
+| `tengu_coral_fern`     | false           | "Searching past context" 段                                      |
 
 ### 12.2 编译期 feature 宏（`feature('...')`，`bun:bundle` tree-shaken）
 
-| 宏 | 作用 |
-|---|---|
-| `EXTRACT_MEMORIES` | 条件加载/调用 extractMemories |
-| `TEAMMEM` | 团队记忆代码路径 |
-| `MEMORY_SHAPE_TELEMETRY` | 召回形状遥测 |
+| 宏                                                               | 作用                                       |
+| ---------------------------------------------------------------- | ------------------------------------------ |
+| `EXTRACT_MEMORIES`                                             | 条件加载/调用 extractMemories              |
+| `TEAMMEM`                                                      | 团队记忆代码路径                           |
+| `MEMORY_SHAPE_TELEMETRY`                                       | 召回形状遥测                               |
 | `KAIROS` / `KAIROS_BRIEF` / `KAIROS_DREAM` / `PROACTIVE` | 常驻/assistant 模式 + nightly /dream skill |
 
 ### 12.3 settings / env
 
-| 项 | 默认 | 作用 |
-|---|---|---|
-| `autoMemoryEnabled`（settings） | undefined→true | 自动记忆显式开关 |
-| `autoMemoryDirectory`（settings） | 无 | 自动记忆目录覆盖（trusted sources） |
-| `autoDreamEnabled`（settings） | optional | autoDream 显式开关 |
-| `CLAUDE_CODE_DISABLE_AUTO_MEMORY`（env） | 无 | 自动记忆总开关 |
-| `CLAUDE_CODE_SIMPLE` / `--bare`（env） | 无 | 禁用记忆（SIMPLE 早退 + gate） |
-| `CLAUDE_CODE_REMOTE` / `CLAUDE_CODE_REMOTE_MEMORY_DIR`（env） | 无 | 远程模式 + 记忆目录重定向 |
-| `CLAUDE_COWORK_MEMORY_PATH_OVERRIDE`（env） | 无 | Cowork 记忆路径覆盖 |
-| `CLAUDE_COWORK_MEMORY_EXTRA_GUIDELINES`（env） | 无 | 注入额外记忆策略文字 |
-| `ANTHROPIC_DEFAULT_SONNET_MODEL`（env） | 无 | 覆盖召回侧 Sonnet 模型 |
+| 项                                                                | 默认            | 作用                                |
+| ----------------------------------------------------------------- | --------------- | ----------------------------------- |
+| `autoMemoryEnabled`（settings）                                 | undefined→true | 自动记忆显式开关                    |
+| `autoMemoryDirectory`（settings）                               | 无              | 自动记忆目录覆盖（trusted sources） |
+| `autoDreamEnabled`（settings）                                  | optional        | autoDream 显式开关                  |
+| `CLAUDE_CODE_DISABLE_AUTO_MEMORY`（env）                        | 无              | 自动记忆总开关                      |
+| `CLAUDE_CODE_SIMPLE` / `--bare`（env）                        | 无              | 禁用记忆（SIMPLE 早退 + gate）      |
+| `CLAUDE_CODE_REMOTE` / `CLAUDE_CODE_REMOTE_MEMORY_DIR`（env） | 无              | 远程模式 + 记忆目录重定向           |
+| `CLAUDE_COWORK_MEMORY_PATH_OVERRIDE`（env）                     | 无              | Cowork 记忆路径覆盖                 |
+| `CLAUDE_COWORK_MEMORY_EXTRA_GUIDELINES`（env）                  | 无              | 注入额外记忆策略文字                |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL`（env）                         | 无              | 覆盖召回侧 Sonnet 模型              |
 
 > **潜台词**：本快照（外部用户视角，无远端 GrowthBook payload）默认只有 auto memory 开、`tengu_moth_copse` 关 → 即 **two-step 双步骤 + 召回预取门控关闭**。`tengu_paper_halyard`、`tengu_coral_fern` 等均为可远端开启的开关。
 
@@ -512,6 +519,7 @@ settings.json 的 autoMemoryEnabled          → 按配置
 **入口**：[`src/query/stopHooks.ts:149`](src/query/stopHooks.ts#L149) `executeExtractMemories(context, appendSystemMessage)`（自然回合结束，`handleStopHooks`）。
 
 **门控**：
+
 1. `feature('EXTRACT_MEMORIES')` 编译宏 → 才挂载/调用。
 2. `toolUseContext.agentId` 存在 → **跳过**（仅主 agent）。
 3. `isExtractModeActive()`（paths.ts）：即 `tengu_passport_quail`；非交互（`-p`/SDK）还须 `tengu_slate_thimble`。
@@ -521,6 +529,7 @@ settings.json 的 autoMemoryEnabled          → 按配置
 7. `!isBareMode()`（`--bare` 关闭）。
 
 **频率（名义每回合，实际被闸控）**：
+
 - **节流闸** `tengu_bramble_lintel`（默认 1）：`turnsSinceLastExtraction++` 达到阈值才真跑；**trailing run 跳过此闸**。
 - **游标增量** `lastMemoryMessageUuid`：每次只处理游标后的新消息（`countModelVisibleMessagesSince`）。若游标因 compaction 丢失，回退到全量计数，避免永久禁用。
 - **主 agent 已写则跳过** `hasMemoryWritesSince`：游标后主 agent 自己写过 memory 文件 → 跳过并推进游标到末尾（`tengu_extract_memories_skipped_direct_write`）。
@@ -528,6 +537,7 @@ settings.json 的 autoMemoryEnabled          → 按配置
 - 异步：`void` fire-and-forget；非交互由 print.ts `drainPendingExtraction`（60s）退出时收口。
 
 **实现（`runExtraction` → `runForkedAgent`）**（extractMemories.ts:329 / :415）：
+
 1. 预注入记忆清单：`formatMemoryManifest(await scanMemoryFiles(dir))`。
 2. 构建提示词：`buildExtractAutoOnlyPrompt` / `buildExtractCombinedPrompt(newMessageCount, existingMemories, skipIndex)`（TEAMMEM 时后者）。
 3. `runForkedAgent`：隔离 context + 复用主会话 cache-safe params（命中 prompt cache）+ `maxTurns:5` + `skipTranscript:true` + `createAutoMemCanUseTool`（限权记忆目录，Bash 只读、Edit/Write 仅记忆目录内）。
@@ -540,6 +550,7 @@ settings.json 的 autoMemoryEnabled          → 按配置
 **入口**：[`src/query/stopHooks.ts:154-156`](src/query/stopHooks.ts#L154) `executeAutoDream(context, appendSystemMessage)`；`runner` 由 `initAutoDream`（utils/backgroundHousekeeping.ts:37）注入。
 
 **多级门控（`runAutoDream`，autoDream.ts:125-198，先便宜后贵）**：
+
 ```
 isGateOpen()
  ├─ getKairosActive() → false
@@ -566,106 +577,45 @@ tryAcquireConsolidationLock()       # ⑤ 单锁：防多进程（拿不到→�
 
 ### 13.4 四种 turn-end 后台任务对照
 
-| 维度 | extractMemories | autoDream | promptSuggestion | sessionMemory |
-|---|---|---|---|---|
-| 触发点 | stop hook | stop hook | stop hook | **post-sampling hook** |
-| 目标 | 提取新信息成记忆 | 跨会话整合 | 预测下条输入 | 会话快照（compaction） |
-| 用 runForkedAgent？ | 是 | 是 | **否**（单次生成） | 是 |
-| 频率/闸控 | 每回合候选；bramble_lintel 节流+游标+去重+trailing | 24h + 5 会话 + 扫描节流 + 整合锁 | 每回合；冷缓存抑制 | token 阈值驱动（10k/5k/3） |
-| 作用域 | 仅主 agent | 仅主 agent | 仅主线程 | 仅主线程 |
+| 维度                | extractMemories                                    | autoDream                        | promptSuggestion         | sessionMemory                |
+| ------------------- | -------------------------------------------------- | -------------------------------- | ------------------------ | ---------------------------- |
+| 触发点              | stop hook                                          | stop hook                        | stop hook                | **post-sampling hook** |
+| 目标                | 提取新信息成记忆                                   | 跨会话整合                       | 预测下条输入             | 会话快照（compaction）       |
+| 用 runForkedAgent？ | 是                                                 | 是                               | **否**（单次生成） | 是                           |
+| 频率/闸控           | 每回合候选；bramble_lintel 节流+游标+去重+trailing | 24h + 5 会话 + 扫描节流 + 整合锁 | 每回合；冷缓存抑制       | token 阈值驱动（10k/5k/3）   |
+| 作用域              | 仅主 agent                                         | 仅主 agent                       | 仅主线程                 | 仅主线程                     |
 
 ---
 
 ## 14. 关键函数/脚本索引表
 
-| 模块 | 文件 | 关键符号 |
-|---|---|---|
-| 系统提示词注入 | `src/memdir/memdir.ts` | `loadMemoryPrompt:419`、`buildMemoryPrompt:272`、`buildMemoryLines:199`、`buildAssistantDailyLogPrompt:327`、`truncateEntrypointContent:57`、`ENTRYPOINT_NAME:34`、`MAX_ENTRYPOINT_LINES=200`、`MAX_ENTRYPOINT_BYTES=25_000` |
-| 类型 | `src/memdir/memoryTypes.ts` | `MEMORY_TYPES`、`TYPES_SECTION_INDIVIDUAL/COMBINED`、`WHAT_NOT_TO_SAVE_SECTION`、`WHEN_TO_ACCESS_SECTION`、`TRUSTING_RECALL_SECTION`、`MEMORY_FRONTMATTER_EXAMPLE` |
-| 扫描/清单 | `src/memdir/memoryScan.ts` | `scanMemoryFiles:35`、`formatMemoryManifest:84`、`MAX_MEMORY_FILES=200`、`FRONTMATTER_MAX_LINES=30` |
-| 正文召回 | `src/memdir/findRelevantMemories.ts` | `findRelevantMemories:39`、`selectRelevantMemories:77`、`SELECT_MEMORIES_SYSTEM_PROMPT:18` |
-| 预取/注入 | `src/utils/attachments.ts` | `startRelevantMemoryPrefetch:2361`、`getRelevantMemoryAttachments:2196`、`readMemoriesForSurfacing:2279`、`collectSurfacedMemories` |
-| 新鲜度 | `src/memdir/memoryAge.ts` | `memoryAgeDays`、`memoryFreshnessText/Note` |
-| 路径/开关 | `src/memdir/paths.ts` | `isAutoMemoryEnabled:30`、`isExtractModeActive:69`、`getAutoMemPath:223`、`getMemoryBaseDir` |
-| 团队路径/提示词 | `src/memdir/teamMemPaths.ts` / `teamMemPrompts.ts` | `isTeamMemoryEnabled:73`、`getTeamMemPath`、`buildCombinedMemoryPrompt` |
-| 侧查询 | `src/utils/sideQuery.ts` | `sideQuery:107` |
-| 模型 | `src/utils/model/model.ts` | `getDefaultSonnetModel:119`（召回模型） |
-| 后台提取 | `src/services/extractMemories/extractMemories.ts` + `prompts.ts` | `executeExtractMemoriesImpl:527`、`runExtraction:329`、`runForkedAgent:415`、`buildExtractAutoOnlyPrompt`、`createAutoMemCanUseTool:171`、`initExtractMemories:296` |
-| 整合 | `src/services/autoDream/autoDream.ts` / `consolidationPrompt.ts` / `config.ts` / `consolidationLock.ts` | `runAutoDream`、`isGateOpen`、`buildConsolidationPrompt`、`isAutoDreamEnabled`、`.consolidate-lock` |
-| 会话记忆 | `src/services/SessionMemory/sessionMemory.ts` / `sessionMemoryUtils.ts` / `prompts.ts` | `shouldExtractMemory`、`buildSessionMemoryUpdatePrompt`、`DEFAULT_SESSION_MEMORY_CONFIG` |
-| 后台执行器 | `src/utils/forkedAgent.ts` | `runForkedAgent:489`、`createCacheSafeParams:131` |
-| 子 agent 作用域 | `src/tools/AgentTool/agentMemory.ts` | `AgentMemoryScope:13`、`getAgentMemoryDir:52`、`loadAgentMemoryPrompt:138` |
-| claudemd 静态层 | `src/utils/claudemd.ts` / `src/utils/config.ts` / `src/utils/memory/types.ts` | `getMemoryFiles:790`、`getClaudeMds:1153`、`filterInjectedMemoryFiles:1142`、`getMemoryPath:1779`、`MEMORY_TYPE_VALUES` |
-| stop hook | `src/query/stopHooks.ts` | `executeExtractMemories:149`、`executeAutoDream:154-156` |
-| 团队同步 | `src/services/teamMemorySync/` | fetch/push、ETag、校验和、412 冲突 |
-| 注入 | `src/context.ts` / `src/services/api/claude.ts` | `getUserContext:155`（claudeMd）、`addCacheBreakpoints:3063`、`createAttachmentMessage` |
-| 系统段 | `src/constants/prompts.ts` / `systemPromptSections.ts` | `systemPromptSection('memory')`、`resolveSystemPromptSections` |
-| MCP 指令 | `src/services/mcp/client.ts` / `src/constants/prompts.ts:579` | `getMcpInstructions`、`client.getInstructions()` |
+| 模块            | 文件                                                                                                            | 关键符号                                                                                                                                                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 系统提示词注入  | `src/memdir/memdir.ts`                                                                                        | `loadMemoryPrompt:419`、`buildMemoryPrompt:272`、`buildMemoryLines:199`、`buildAssistantDailyLogPrompt:327`、`truncateEntrypointContent:57`、`ENTRYPOINT_NAME:34`、`MAX_ENTRYPOINT_LINES=200`、`MAX_ENTRYPOINT_BYTES=25_000` |
+| 类型            | `src/memdir/memoryTypes.ts`                                                                                   | `MEMORY_TYPES`、`TYPES_SECTION_INDIVIDUAL/COMBINED`、`WHAT_NOT_TO_SAVE_SECTION`、`WHEN_TO_ACCESS_SECTION`、`TRUSTING_RECALL_SECTION`、`MEMORY_FRONTMATTER_EXAMPLE`                                                               |
+| 扫描/清单       | `src/memdir/memoryScan.ts`                                                                                    | `scanMemoryFiles:35`、`formatMemoryManifest:84`、`MAX_MEMORY_FILES=200`、`FRONTMATTER_MAX_LINES=30`                                                                                                                                  |
+| 正文召回        | `src/memdir/findRelevantMemories.ts`                                                                          | `findRelevantMemories:39`、`selectRelevantMemories:77`、`SELECT_MEMORIES_SYSTEM_PROMPT:18`                                                                                                                                             |
+| 预取/注入       | `src/utils/attachments.ts`                                                                                    | `startRelevantMemoryPrefetch:2361`、`getRelevantMemoryAttachments:2196`、`readMemoriesForSurfacing:2279`、`collectSurfacedMemories`                                                                                                  |
+| 新鲜度          | `src/memdir/memoryAge.ts`                                                                                     | `memoryAgeDays`、`memoryFreshnessText/Note`                                                                                                                                                                                              |
+| 路径/开关       | `src/memdir/paths.ts`                                                                                         | `isAutoMemoryEnabled:30`、`isExtractModeActive:69`、`getAutoMemPath:223`、`getMemoryBaseDir`                                                                                                                                         |
+| 团队路径/提示词 | `src/memdir/teamMemPaths.ts` / `teamMemPrompts.ts`                                                          | `isTeamMemoryEnabled:73`、`getTeamMemPath`、`buildCombinedMemoryPrompt`                                                                                                                                                                |
+| 侧查询          | `src/utils/sideQuery.ts`                                                                                      | `sideQuery:107`                                                                                                                                                                                                                            |
+| 模型            | `src/utils/model/model.ts`                                                                                    | `getDefaultSonnetModel:119`（召回模型）                                                                                                                                                                                                    |
+| 后台提取        | `src/services/extractMemories/extractMemories.ts` + `prompts.ts`                                            | `executeExtractMemoriesImpl:527`、`runExtraction:329`、`runForkedAgent:415`、`buildExtractAutoOnlyPrompt`、`createAutoMemCanUseTool:171`、`initExtractMemories:296`                                                              |
+| 整合            | `src/services/autoDream/autoDream.ts` / `consolidationPrompt.ts` / `config.ts` / `consolidationLock.ts` | `runAutoDream`、`isGateOpen`、`buildConsolidationPrompt`、`isAutoDreamEnabled`、`.consolidate-lock`                                                                                                                                |
+| 会话记忆        | `src/services/SessionMemory/sessionMemory.ts` / `sessionMemoryUtils.ts` / `prompts.ts`                    | `shouldExtractMemory`、`buildSessionMemoryUpdatePrompt`、`DEFAULT_SESSION_MEMORY_CONFIG`                                                                                                                                               |
+| 后台执行器      | `src/utils/forkedAgent.ts`                                                                                    | `runForkedAgent:489`、`createCacheSafeParams:131`                                                                                                                                                                                        |
+| 子 agent 作用域 | `src/tools/AgentTool/agentMemory.ts`                                                                          | `AgentMemoryScope:13`、`getAgentMemoryDir:52`、`loadAgentMemoryPrompt:138`                                                                                                                                                             |
+| claudemd 静态层 | `src/utils/claudemd.ts` / `src/utils/config.ts` / `src/utils/memory/types.ts`                             | `getMemoryFiles:790`、`getClaudeMds:1153`、`filterInjectedMemoryFiles:1142`、`getMemoryPath:1779`、`MEMORY_TYPE_VALUES`                                                                                                            |
+| stop hook       | `src/query/stopHooks.ts`                                                                                      | `executeExtractMemories:149`、`executeAutoDream:154-156`                                                                                                                                                                                 |
+| 团队同步        | `src/services/teamMemorySync/`                                                                                | fetch/push、ETag、校验和、412 冲突                                                                                                                                                                                                           |
+| 注入            | `src/context.ts` / `src/services/api/claude.ts`                                                             | `getUserContext:155`（claudeMd）、`addCacheBreakpoints:3063`、`createAttachmentMessage`                                                                                                                                                |
+| 系统段          | `src/constants/prompts.ts` / `systemPromptSections.ts`                                                      | `systemPromptSection('memory')`、`resolveSystemPromptSections`                                                                                                                                                                           |
+| MCP 指令        | `src/services/mcp/client.ts` / `src/constants/prompts.ts:579`                                               | `getMcpInstructions`、`client.getInstructions()`                                                                                                                                                                                         |
 
 ---
 
 ## 15. 详细 mermaid 架构图
-
-> 系统全貌大图同时独立导出为 [`Claude Code 记忆机制架构图.mmd`](Claude%20Code%20记忆机制架构图.mmd)，可用 mermaid-cli / 在线渲染器单独渲染。
-
-### 15.1 系统全貌（flowchart LR）——即独立 `.mmd` 内容
-
-```mermaid
-flowchart LR
-    subgraph Modes[运行模式分派 · loadMemoryPrompt]
-        direction TB
-        L[loadMemoryPrompt] -->|KAIROS && active| KD[buildAssistantDailyLogPrompt<br/>logs/YYYY/MM/YYYY-MM-DD.md]
-        L -->|TEAMMEM && enabled| KC[buildCombinedMemoryPrompt<br/>private + team 双索引]
-        L -->|autoEnabled| KI[buildMemoryLines<br/>auto memory]
-        L -->|否则|null + tengu_memdir_disabled
-    end
-
-    subgraph Types[记忆类型 MEMORY_TYPES]
-        direction TB
-        T1[user] --> T1f{frontmatter<br/>name/description/type}
-        T2[feedback] -->|Why + How to apply| T1f
-        T3[project] -->|相对日期→绝对日期| T1f
-        T4[reference] --> T1f
-    end
-
-    subgraph Scopes[作用域 Scope]
-        direction TB
-        S1[auto · 主会话<br/>projects/{hash}/memory]
-        S2[team · 仓库级<br/>memory/team + 远端同步]
-        S3[agent user · agent-memory/user]
-        S4[agent project · agent-memory/project]
-        S5[agent local · agent-memory-local]
-        S6[claudemd · User/Project/Local/Managed]
-    end
-
-    subgraph Writers[写入主体]
-        direction TB
-        W1[主 agent /remember]
-        W2[extractMemories<br/>stop hook 增量]
-        W3[autoDream<br/>stop hook 低频整合]
-        W4[/dream KAIROS 蒸馏]
-        W5[sessionMemory 快照]
-    end
-
-    subgraph Recall[召回注入]
-        direction TB
-        R1[用户 Query]
-        R2[scanMemoryFiles<br/>frontmatter 清单 ≤200]
-        R3[Sonnet sideQuery<br/>5 槽 JSON Schema]
-        R4[readMemoriesForSurfacing<br/>200 行 / 4KB 截断]
-        R1 --> R2 --> R3 --> R4
-        R4 -->|relevant_memories 附件| R5[注 入 user message]
-    end
-
-    Modes --> Types
-    Modes --> Scopes
-    Modes --> Writers
-    Writers -->|写主题文件+MEMORY.md| Scopes
-    Scopes -->|系统提示词索引| INJ1[system 提示词]
-    Recall -->|正文| INJ2[messages]
-    INJ1 --> REQ[API 请求体]
-    INJ2 --> REQ
-```
 
 ### 15.2 读侧：索引进 system + 正文异步召回时序
 
@@ -729,33 +679,4 @@ flowchart TD
     C --> W[extractWrittenPaths<br/>过滤掉 MEMORY.md]
     W --> NOTIFY[createMemorySavedMessage<br/>通知主会话 + 遥测]
     NOTIFY --> NEXTR[(主题文件 + MEMORY.md<br/>下回合索引可见)]
-```
-
-### 15.4 目录与作用域树
-
-```mermaid
-flowchart TD
-    ROOT[~/.claude/projects/{hash}/memory/]
-    ROOT --> A1[user.md]
-    ROOT --> A2[feedback.md]
-    ROOT --> A3[project.md]
-    ROOT --> A4[reference.md]
-    ROOT --> AI[MEMORY.md 索引<br/>200 行 / 25KB]
-    ROOT --> AL[.consolidate-lock<br/>autoDream 整合锁]
-    ROOT --> LG[logs/YYYY/MM/YYYY-MM-DD.md<br/>KAIROS append-only]
-    ROOT --> TM[team/ 目录<br/>TEAMMEM 仓库级]
-    TM --> TM1[team/MEMORY.md]
-    TM --> TM2[team 主题文件]
-    TM -.ETag/校验和.-> TSRV[(远端<br/>/api/claude_code/team_memory)]
-
-    AGT[agent-memory/ 与 agent-memory-local/]
-    AGT --> AU[agent-memory/user/{type}<br/>全局]
-    AGT --> AP[agent-memory/project/{type}<br/>可提交 git]
-    AGT --> AL2[agent-memory-local/{type}<br/>本机不入库]
-
-    CLD[claudemd 静态层]
-    CLD --> CM[Managed · /etc/claude-code/CLAUDE.md]
-    CLD --> CU[User · ~/.claude/CLAUDE.md + rules]
-    CLD --> CP[Project · <cwd>/CLAUDE.md + .claude + rules]
-    CLD --> CL[Local · CLAUDE.local.md]
 ```

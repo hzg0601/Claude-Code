@@ -19,6 +19,9 @@
 
 ### 技术文档
 - [MCP 协议](./technical/mcp.md) - Model Context Protocol 实现
+- [Bash 工具深度拆解](./technical/bash-tool.md) - Schema、权限、沙箱、执行与结果映射完整链路
+- [Claude Code Skill 机制完全解析](./technical/Claude%20Code%20Skill%20机制完全解析.md) - Skill 定义/来源/发现匹配/注入执行全链路（含源码与字段表格）
+- [Claude Code Skill 机制逻辑解析](./technical/Claude%20Code%20Skill%20机制逻辑解析.md) - 只讲逻辑：Skill 链路、概念、关系与设计意图
 - [远程会话](./technical/remote-sessions.md) - 远程会话和桥接机制
 - [权限系统](./technical/permissions.md) - 工具权限和用户授权
 - [遥测和分析](./technical/telemetry.md) - 使用追踪和指标收集
