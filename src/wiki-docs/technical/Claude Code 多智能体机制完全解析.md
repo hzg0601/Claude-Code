@@ -19,8 +19,7 @@
 
 ### 1.1 七个任务类型（TaskType）——多智能体的运行时形态
 
-无论哪种"智能体"，在运行时都会被登记为一个 **Task**。CC 把所有后台可追踪的实体统一建模为
-任务状态机。任务类型的全集定义在 [Task.ts:6-13](src/Task.ts#L6-L13)：
+无论哪种"智能体"，在运行时都会被登记为一个 **Task**。CC 把所有后台可追踪的实体统一建模为任务状态机。任务类型的全集定义在 [Task.ts:6-13](src/Task.ts#L6-L13)：
 
 ```ts
 export type TaskType =
@@ -35,15 +34,15 @@ export type TaskType =
 
 其中与"智能体"直接相关的有 **4 种**，其余为支撑型：
 
-| 任务类型 | 前缀 | 对应文件 | 本质 | 是否"智能体" |
-|---------|------|----------|------|------------|
-| `local_agent` | `a` | `tasks/LocalAgentTask/LocalAgentTask.tsx` | 本机进程内运行的子代理（Agent 工具） | ✅ |
-| `in_process_teammate` | `t` | `tasks/InProcessTeammateTask/` | 同进程运行的 swarm teammate | ✅ |
-| `remote_agent` | `r` | `tasks/RemoteAgentTask/RemoteAgentTask.tsx` | 云端（CCR）远程会话 | ✅ |
-| `local_workflow` | `w` | `tasks/LocalWorkflowTask/LocalWorkflowTask.ts` | `workflow` 工具（特性开关门控） | ⚠️ 编排脚本 |
-| `local_bash` | `b` | `tasks/LocalShellTask/` | 持久化 PTY shell 进程 | ❌ |
-| `monitor_mcp` | `m` | `tasks/MonitorMcpTask/` | `monitor` 工具（门控） | ❌ |
-| `dream` | `d` | `tasks/DreamTask/` | 空闲"梦游"后台进程 | ❌ |
+| 任务类型                | 前缀  | 对应文件                                         | 本质                                 | 是否"智能体"  |
+| ----------------------- | ----- | ------------------------------------------------ | ------------------------------------ | ------------- |
+| `local_agent`         | `a` | `tasks/LocalAgentTask/LocalAgentTask.tsx`      | 本机进程内运行的子代理（Agent 工具） | ✅            |
+| `in_process_teammate` | `t` | `tasks/InProcessTeammateTask/`                 | 同进程运行的 swarm teammate          | ✅            |
+| `remote_agent`        | `r` | `tasks/RemoteAgentTask/RemoteAgentTask.tsx`    | 云端（CCR）远程会话                  | ✅            |
+| `local_workflow`      | `w` | `tasks/LocalWorkflowTask/LocalWorkflowTask.ts` | `workflow` 工具（特性开关门控）    | ⚠️ 编排脚本 |
+| `local_bash`          | `b` | `tasks/LocalShellTask/`                        | 持久化 PTY shell 进程                | ❌            |
+| `monitor_mcp`         | `m` | `tasks/MonitorMcpTask/`                        | `monitor` 工具（门控）             | ❌            |
+| `dream`               | `d` | `tasks/DreamTask/`                             | 空闲"梦游"后台进程                   | ❌            |
 
 任务 ID 由前缀 + 8 字节随机数组成（[Task.ts:98-106](src/Task.ts#L98-L106)），字母表为
 36 进制小写，`36^8 ≈ 2.8 万亿` 组合，旨在抵御暴力符号链接攻击（[Task.ts:95-96](src/Task.ts#L95-L96)）：
@@ -79,6 +78,7 @@ export function getTaskByType(type: TaskType): Task | undefined {
 ```
 
 注意两点设计：
+
 - `LocalWorkflowTask` 与 `MonitorMcpTask` 是**条件加载**的——分别由 `feature('WORKFLOW_SCRIPTS')`
   与 `feature('MONITOR_TOOL')` 门控，特性关闭时为 `null`（[tasks.ts:9-14](src/tasks.ts#L9-L14)）。
 - 每个 `Task` 只暴露 `{ name, type, kill }` 三个字段（[Task.ts:72-76](src/Task.ts#L72-L76)）。
@@ -126,8 +126,7 @@ export function isCoordinatorMode(): boolean {
 
 ## 二、Subagent：Agent 工具（最基础的单元）
 
-Subagent 是整个多智能体系统的**地基**。其余所有层次（coordinator 的 worker、作用域更大的团队）
-都建立在这一层的派发机制之上。
+Subagent 是整个多智能体系统的**地基**。其余所有层次（coordinator 的 worker、作用域更大的团队）都建立在这一层的派发机制之上。
 
 ### 2.1 AgentDefinition：智能体的"角色定义"
 
@@ -179,15 +178,15 @@ agent 文件是 **frontmatter + 正文 markdown** 格式，由 `parseAgentFromMa
 
 [builtInAgents.ts](src/tools/AgentTool/builtInAgents.ts) 集中定义了内置智能体：
 
-| 类型 | 定位 | 关键约束 |
-|------|------|---------|
-| `general-purpose` | 通用工作者 | `tools: ['*']`，`model: 'inherit'`（`getDefaultSubagentModel()`） |
-| `Explore` | 只读搜索/定位 | `disallowedTools: [Agent, ExitPlanMode, Edit, Write, NotebookEdit]`，`omitClaudeMd: true` |
-| `Plan` | 架构/实现规划 | 同 Explore 的禁用清单，`tools: EXPLORE_AGENT.tools` |
-| `statusline-setup` | 状态栏配置向导 | — |
-| `claude-code-guide` | CC/Agent SDK 使用问答 | — |
-| `verification` | 代码验证（门控） | — |
-| `fork` | 隐式分支专用（`FORK_AGENT`） | `tools:['*']`, `maxTurns:200`, `permissionMode:'bubble'`（[forkSubagent.ts:60-71](src/tools/AgentTool/forkSubagent.ts#L60-L71)） |
+| 类型                  | 定位                           | 关键约束                                                                                                                              |
+| --------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `general-purpose`   | 通用工作者                     | `tools: ['*']`，`model: 'inherit'`（`getDefaultSubagentModel()`）                                                               |
+| `Explore`           | 只读搜索/定位                  | `disallowedTools: [Agent, ExitPlanMode, Edit, Write, NotebookEdit]`，`omitClaudeMd: true`                                         |
+| `Plan`              | 架构/实现规划                  | 同 Explore 的禁用清单，`tools: EXPLORE_AGENT.tools`                                                                                 |
+| `statusline-setup`  | 状态栏配置向导                 | —                                                                                                                                    |
+| `claude-code-guide` | CC/Agent SDK 使用问答          | —                                                                                                                                    |
+| `verification`      | 代码验证（门控）               | —                                                                                                                                    |
+| `fork`              | 隐式分支专用（`FORK_AGENT`） | `tools:['*']`, `maxTurns:200`, `permissionMode:'bubble'`（[forkSubagent.ts:60-71](src/tools/AgentTool/forkSubagent.ts#L60-L71)） |
 
 `Explore`/`Plan` 由 `areExplorePlanAgentsEnabled()` 门控（[builtInAgents.ts:13-20](src/tools/AgentTool/builtInAgents.ts#L13-L20)）。
 在 coordinator 模式下，`getCoordinatorAgents()` 会**替换**默认内置集（[builtInAgents.ts:35-43](src/tools/AgentTool/builtInAgents.ts#L35-L43)）。
@@ -318,6 +317,7 @@ slug 形如 `agent-<8hex>`，落地在 `<repoRoot>/.claude/worktrees/<slug>/`，
 优先用 `WorktreeCreate` 钩子、回退 `git worktree`。它**不** `process.chdir`，只包裹执行路径。
 
 完成后 `cleanupWorktreeIfNeeded`（[AgentTool.tsx:644-685](src/tools/AgentTool/AgentTool.tsx#L644-L685)）：
+
 - 无改动 → `removeAgentWorktree`（删目录 + 分支）；
 - 有改动 → **保留**，把 `worktreePath`/`worktreeBranch` 放进结果返回；
 - 钩子型 worktree 恒保留（无法探测 VCS 改动）。
@@ -331,20 +331,18 @@ slug 形如 `agent-<8hex>`，落地在 `<repoRoot>/.claude/worktrees/<slug>/`，
 - **fork 路径**：`buildForkedMessages`（[forkSubagent.ts:107-169](src/tools/AgentTool/forkSubagent.ts#L107-L169)）
   克隆父**整条最后 assistant 消息**（全部 tool_use/thinking/text 块），构造占位 tool_result，再加 per-child 指令——
   最大化 prompt-cache 复用：`[...history, assistant(all_tool_uses), user(placeholder_results, directive)]`。
-
 - **持久智能体记忆**：`agentMemory` 按 `AgentMemoryScope = 'user' | 'project' | 'local'` 落盘
   （[agentMemory.ts:13](src/tools/AgentTool/agentMemory.ts#L13)）：
+
   - `user` → `<memoryBase>/agent-memory/<agentType>/`
   - `project` → `<cwd>/.claude/agent-memory/<agentType>/`
   - `local` → `<cwd>/.claude/agent-memory-local/<agentType>/`
-  加载时 `loadAgentMemoryPrompt`（[agentMemory.ts:138-177](src/tools/AgentTool/agentMemory.ts#L138-L177)）
-  注入指向 `MEMORY.md` 的提示词，智能体用被自动追加的 Write/Edit/Read 维护记忆。
-
+    加载时 `loadAgentMemoryPrompt`（[agentMemory.ts:138-177](src/tools/AgentTool/agentMemory.ts#L138-L177)）
+    注入指向 `MEMORY.md` 的提示词，智能体用被自动追加的 Write/Edit/Read 维护记忆。
 - **记忆快照**：`agentMemorySnapshot`（`<cwd>/.claude/agent-memory-snapshots/<agentType>/`，
   [agentMemorySnapshot.ts:31-33](src/tools/AgentTool/agentMemorySnapshot.ts#L31-L33)）在加载时由
   `checkAgentMemorySnapshot`（[agentMemorySnapshot.ts:98-144](src/tools/AgentTool/agentMemorySnapshot.ts#L98-L144)）
   决定 `initialize` / `prompt-update` / `none`，实现"首跑播种 + 更新提示"。
-
 - **child→parent**：除文本结果外，还通过**转录 sidechain**（`recordSidechainTranscript`，[runAgent.ts:735](src/tools/AgentTool/runAgent.ts#L735)）
   持久化到磁盘（供 resume/SendMessage 重建）；异步完成时由 `enqueueAgentNotification`
   （[agentToolUtils.ts:624-637](src/tools/AgentTool/agentToolUtils.ts#L624-L637)）把结果作为 user 消息
@@ -352,13 +350,13 @@ slug 形如 `agent-<8hex>`，落地在 `<repoRoot>/.claude/worktrees/<slug>/`，
 
 ### 2.9 适用场景小结
 
-| 维度 | Subagent |
-|------|----------|
-| 触发 | 父模型调用 `Agent` 工具，`subagent_type` 选型 |
-| 并发 | 可同步（阻塞等待）/ 后台（异步 + 通知） |
-| 上下文 | prompt 自包含；fork 可克隆父消息；持久记忆按需 |
+| 维度     | Subagent                                                               |
+| -------- | ---------------------------------------------------------------------- |
+| 触发     | 父模型调用`Agent` 工具，`subagent_type` 选型                       |
+| 并发     | 可同步（阻塞等待）/ 后台（异步 + 通知）                                |
+| 上下文   | prompt 自包含；fork 可克隆父消息；持久记忆按需                         |
 | 生命周期 | 随父会话；`SendMessage` 可续跑；`/clear`/压缩后可用 sidechain 恢复 |
-| 适用任务 | 一次性委派：探索、调研、并行子任务、独立功能开发 |
+| 适用任务 | 一次性委派：探索、调研、并行子任务、独立功能开发                       |
 
 ---
 
@@ -375,7 +373,6 @@ slug 形如 `agent-<8hex>`，落地在 `<repoRoot>/.claude/worktrees/<slug>/`，
 - **身份**：lead 的固定名 `TEAM_LEAD_NAME = 'team-lead'`（[utils/swarm/constants.ts:1](src/utils/swarm/constants.ts#L1)），
   其 **agentId 确定性地**是 `team-lead@teamName`；teammate 为 `agentName@teamName`。
   确定性 ID 是**崩溃/断线后重连**的关键前提（见 §3.6）。
-
 - **团队/任务列表协作**：`utils/tasks.ts` 提供基于任务列表的团队任务分配原语——`claimTask`
   （[utils/tasks.ts](src/utils/tasks.ts)）、`unassignTeammateTasks`（[utils/tasks.ts:818](src/utils/tasks.ts#L818)），
   支持 `owner` 归属、`blocked` 依赖、`agent_busy` 忙检查，teammate 退出时自动把未完成任务转回 `pending`
@@ -384,6 +381,7 @@ slug 形如 `agent-<8hex>`，落地在 `<repoRoot>/.claude/worktrees/<slug>/`，
 ### 3.2 触发：TeamCreate 与 SpawnTeammate
 
 **创建团队**由 `TeamCreateTool` 触发（`tools/TeamCreateTool/TeamCreateTool.ts`）：
+
 - 当前会话若已是某团队成员则报错（"leader 一次只能管理一个团队"）；
 - `generateUniqueTeamName()`、建 TeamFile（`leadAgentId`、`leadSessionId`、一个 `team-lead` 成员）、
   `writeTeamFileAsync`、注册会话清理、`setLeaderTeamName`。
@@ -408,13 +406,14 @@ return handleSpawnSeparateWindow(input, context)                         // 独�
 `utils/swarm/backends/` 定义了三种后端（`BackendType = 'tmux' | 'iterm2' | 'in-process'`，
 [types.ts:9](src/utils/swarm/backends/types.ts#L9)）：
 
-| 后端 | OS | 本质 | 取舍 |
-|------|-----|------|------|
-| **tmux** | 类 Unix | 每个 teammate 一个 tmux pane / 独立 `claude-swarm` 会话 | 真实多进程隔离、Swarm 平铺视图；需 tmux、启动重、进程间消息走文件信箱 |
-| **iTerm2** | macOS | iTerm 原生 split pane | 好看的原生分屏；需 `it2` Python CLI（`it2Setup.ts` 可自动装）；`supportsHideShow=false`，颜色/标题是 no-op |
-| **in-process** | 跨平台 | 同进程，`AsyncLocalStorage` 上下文隔离 | 最快、无进程开销、共享内存；隔离性弱、无视觉窗格 |
+| 后端                 | OS      | 本质                                                     | 取舍                                                                                                            |
+| -------------------- | ------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **tmux**       | 类 Unix | 每个 teammate 一个 tmux pane / 独立`claude-swarm` 会话 | 真实多进程隔离、Swarm 平铺视图；需 tmux、启动重、进程间消息走文件信箱                                           |
+| **iTerm2**     | macOS   | iTerm 原生 split pane                                    | 好看的原生分屏；需`it2` Python CLI（`it2Setup.ts` 可自动装）；`supportsHideShow=false`，颜色/标题是 no-op |
+| **in-process** | 跨平台  | 同进程，`AsyncLocalStorage` 上下文隔离                 | 最快、无进程开销、共享内存；隔离性弱、无视觉窗格                                                                |
 
 **探测优先级**（`registry.ts detectAndGetBackend`，[registry.ts:136-254](src/utils/swarm/backends/registry.ts#L136-L254)）：
+
 1. 在 tmux 内 → 恒用 tmux（native，最省最稳）；
 2. 在 iTerm2（且有 `it2`）→ 用 iTerm2（用户偏好 tmux 则用 tmux）；
 3. 有 tmux → 外部 `claude-swarm` 会话；
@@ -466,6 +465,7 @@ teammate 的权限请求如何让用户/leader 批准？两套配合：
 ### 3.6 连接与重连
 
 `utils/swarm/reconnection.ts`：
+
 - `computeInitialTeamContext`（[reconnection.ts:23-66](src/utils/swarm/reconnection.ts#L23-L66)）：`isLeader = !agentId`；
   读 `getDynamicTeamContext()`。
 - `initializeTeammateContextFromSession`（[reconnection.ts:75-119](src/utils/swarm/reconnection.ts#L75-L119)）：
@@ -493,12 +493,12 @@ Coordinator 是**单一协调器**驱动**多个异步 worker 子代理**的组�
 ### 4.2 worker 智能体类型
 
 `coordinator/workerAgent.ts:1` 定义 `export const WORKER_AGENT = 'worker'`——这是 coordinator 模式下
-`Agent` 工具使用的 `subagent_type`（`'worker'`）。核心可注入工具 `INTERNAL_WORKER_TOOLS =
-[TeamCreate, TeamDelete, SendMessage, SyntheticOutput]`（[coordinatorMode.ts:29-34](src/coordinator/coordinatorMode.ts#L29-L34)）。
+`Agent` 工具使用的 `subagent_type`（`'worker'`）。核心可注入工具 `INTERNAL_WORKER_TOOLS = [TeamCreate, TeamDelete, SendMessage, SyntheticOutput]`（[coordinatorMode.ts:29-34](src/coordinator/coordinatorMode.ts#L29-L34)）。
 
 ### 4.3 运行与控制流
 
 `getCoordinatorSystemPrompt`（[coordinatorMode.ts:111-369](src/coordinator/coordinatorMode.ts#L111-L369)）描述协调器角色：
+
 - 用 `Agent` 工具以 `subagent_type 'worker'` 派发**异步 worker**；
 - 用 `SendMessage` **续跑** worker；
 - 用 `TaskStopTool` **停止** worker；
@@ -509,20 +509,153 @@ Coordinator 是**单一协调器**驱动**多个异步 worker 子代理**的组�
 
 ### 4.4 与 Swarm / Team 的本质差异
 
-| 维度 | Swarm / Team | Coordinator 模式 |
-|------|-------------|------------------|
-| 结构 | 1 lead + 多个对等 teammate，持久化身份 | 1 协调器 + 多个**异步 worker 子代理** |
-| 身份 | `agentName@teamName`，有 TeamFile 成员条目 | 短命的 worker，无团队文件条目 |
-| 运行 | 常驻并发（客户端进程间或同进程） | 短生命周期 Subagent 派发 |
-| 通信 | 文件信箱 + SendMessage | SendMessage 续跑 + TaskStop 停止 + `<task-notification>` |
-| 视觉 | tmux/iTerm2 Swarm 窗格 | CoordinatorTaskPanel（后台任务面板） |
-| 数据 | 无 | 有"草稿本"（scratchpad）账户供 worker 共享中间结果 |
+| 维度 | Swarm / Team                                 | Coordinator 模式                                          |
+| ---- | -------------------------------------------- | --------------------------------------------------------- |
+| 结构 | 1 lead + 多个对等 teammate，持久化身份       | 1 协调器 + 多个**异步 worker 子代理**               |
+| 身份 | `agentName@teamName`，有 TeamFile 成员条目 | 短命的 worker，无团队文件条目                             |
+| 运行 | 常驻并发（客户端进程间或同进程）             | 短生命周期 Subagent 派发                                  |
+| 通信 | 文件信箱 + SendMessage                       | SendMessage 续跑 + TaskStop 停止 +`<task-notification>` |
+| 视觉 | tmux/iTerm2 Swarm 窗格                       | CoordinatorTaskPanel（后台任务面板）                      |
+| 数据 | 无                                           | 有"草稿本"（scratchpad）账户供 worker 共享中间结果        |
 
 两者是"**对等协作** vs **主从派发**"两种不同的编排哲学。
 
----
+### 4.5 Subagent 与 Coordinator worker 的差异
 
-## 五、Remote / 云端（CCR teleport）
+一个常见误区是把"Subagent 由主智能体派发"与"Coordinator 派发 worker"视为两套并列机制。实际上它们**共享底层**：
+Coordinator 的 worker 本质上就是一种**被编排的后台 subagent**——都通过同一 `Agent` 工具、都走嵌套 `query()`。
+差异在**编排哲学**与**角色定义**，而非机制本身：
+
+| 维度 | **Subagent（§二）** | **Coordinator worker（§四）** |
+| ---- | ------------------- | ----------------------------- |
+| 派发者 | 常规交互会话的主智能体 | 专门的协调器智能体（`getCoordinatorSystemPrompt`，[coordinatorMode.ts:111](src/coordinator/coordinatorMode.ts#L111)） |
+| 角色名 | `general-purpose` / `Explore` / `Plan` / 自定义 | 固定 `WORKER_AGENT = 'worker'`（[workerAgent.ts:1](src/coordinator/workerAgent.ts#L1)） |
+| 触发形态 | 主模型调 `Agent({ subagent_type })`，同步/后台皆可 | 协调器调 `Agent({ subagent_type: 'worker', run_in_background })`，几乎总是异步 |
+| 生命周期 | 主循环处理中的**一步**（等待结果拼回上下文） | **并发、可续跑、可停止**的一组工人，协调器不阻塞等待 |
+| 通信 | 一次性结果回传（`tool_result`） | 双向编排：派发 → `SendMessage` 续跑 → `TaskStopTool` 停止 → `<task-notification>` 回报 |
+| 管理手段 | 主智能体没有专属编排工具 | `INTERNAL_WORKER_TOOLS = { TeamCreate, TeamDelete, SendMessage, SyntheticOutput }`（[coordinatorMode.ts:29-34](src/coordinator/coordinatorMode.ts#L29-L34)） |
+| 共享数据 | 无 | 草稿本（scratchpad）账户经依赖注入（[QueryEngine.ts:112](src/QueryEngine.ts#L112)）供 worker 共享中间结果 |
+| 适用 | 一次性、聚焦、结果可汇聚 | 需要**并行 + 迭代 + 编排多个子任务**的复杂工作流 |
+
+三者的区分（易混淆点）：**Subagent = 无身份的临时执行单元**；**Coordinator worker = 被编排的"后台 subagent"**（比 subagent 多编排能力，但同样短命、无团队身份、无持久通信）；**Swarm teammate = 有身份、可持久通信、可重连的对等体**（见 §4.6、§3）。
+
+### 4.6 Coordinator 协调者与 Swarm Leader 的差异
+
+两者都是多智能体的"指挥者"，共享底层（都依赖 SendMessage / TeamCreate / `Agent` 工具），但**角色定位完全不同**：
+
+| 维度 | **Coordinator 协调者** | **Swarm Leader** |
+| ---- | ---------------------- | ---------------- |
+| 归属 | 独立会话，**无团队身份** | **团队一员**，确定性身份 `team-lead@teamName`，写入 `TeamFile` 成员列表，可被 teammate 用 SendMessage 找到 |
+| 身份判定 | 仅靠 `CLAUDE_CODE_COORDINATOR_MODE` 激活 | `isTeamLeader()`：`getAgentId()` 为空**或**为 `'team-lead'`（[permissionSync.ts:581-591](src/utils/swarm/permissionSync.ts#L581-L591)）；`isSwarmWorker()` = `teamName && agentId && !isTeamLeader()`（[permissionSync.ts:596-601](src/utils/swarm/permissionSync.ts#L596-L601)） |
+| 下层身份 | 一次性 worker（无身份、不在任何团队登记） | 持久 teammate（`name@teamName`，可重连） |
+| 派发工具 | `Agent({ subagent_type: 'worker' })` | `Teammate` / `Agent({ name, team_name })` |
+| 权限方式 | worker 是**子代理**，权限可被父（协调者）覆盖 | teammate 是**对等会话**，权限请求经 mailbox 发回 leader，由 `leaderPermissionBridge`（借 leader 的确认对话框）批准 |
+| 通信方向 | **单向管理**（派发 / 续跑 / 停止） | **双向对等协作**（teammate 可主动发消息、发权限请求、`*` 广播、`@mention`） |
+| 共享数据 | 草稿本 scratchpad（[QueryEngine.ts:112](src/QueryEngine.ts#L112)） | mailbox 消息 + 团队任务列表（`claimTask` / `unassignTeammateTasks`，[utils/tasks.ts](src/utils/tasks.ts)） |
+| 关系哲学 | **主从派发、集中编排**（单人指挥中心） | **对等团队、领导协调**（团队协作网络） |
+
+**一句话概括**：Coordinator 是"行政主管"，临时雇一批无身份的合同工（worker）并行干活，用草稿本分派资料；
+Swarm leader 是"团队的项目经理"，带一群有档案的正式员工（teammate），靠消息与任务列表管理，权限还要跟每个成员来回确认。
+前者是集中编排，后者是对等团队协作。
+
+### 4.7 三种模式是否有明确界限？是"配置门控"而非"LLM 判断"
+
+**核心结论：subagent / coordinator / swarm 之间没有"由大模型依据任务自动挑选"的模糊边界。**
+它们是三个**相互独立、各自被不同开关门控**的特性；代码里不存在"该用哪种模式"的判定逻辑，
+只有"这个模式是否已启用"的布尔判断。大模型的自由度只体现在**启用之后**的工具选择层，
+而"模式能不能用"完全由配置/构建决定。
+
+| 模式 | 启用开关（源码） | 判定点 |
+| ---- | ---------------- | ------ |
+| **Subagent（Agent 工具）** | 无运行时装；内置 agents 无条件注册，非 ant 构建移除该工具 | [constants/tools.ts:41](src/constants/tools.ts#L41)、[builtInAgents.ts:45-48](src/tools/AgentTool/builtInAgents.ts#L45-L48) |
+| **Coordinator** | `feature('COORDINATOR_MODE') && CLAUDE_CODE_COORDINATOR_MODE` | [coordinatorMode.ts:36-41](src/coordinator/coordinatorMode.ts#L36-L41) |
+| **Swarm / Team** | ant 恒开；外部需 `--agent-teams`/`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` + GrowthBook `tengu_amber_flint` | [agentSwarmsEnabled.ts:24-44](src/utils/agentSwarmsEnabled.ts#L24-L44) |
+
+**"模式开关"与"工具选择"是两个分离的关注点**：
+
+- **模式开不开**＝配置/环境门控，与 LLM 无关；
+- **用哪个工具**＝LLM 自主调用 `Agent`(`subagent_type`)、`Teammate`、workflow 的选择行为。
+
+Coordinator 一旦开启，会通过 `COORDINATOR_MODE_ALLOWED_TOOLS` 把协调者的工具**裁剪**为
+只剩 `Agent + TaskStop + SendMessage + SyntheticOutput`（[constants/tools.ts:107-112](src/constants/tools.ts#L107-L112)），
+并在简单模式下把 Agent/TaskStop/SendMessage 追加进协调者工具集（[tools.ts:280-296](src/tools.ts#L280-L296)）。
+也就是说，开启 coordinator 后，LLM"能选"的范围被代码强制收窄到只剩派发/管理工具——
+它不是"自己判断要不要当协调者"，而是被配置锁死在这个角色里。
+
+**那"模式是如何流传到下个会话的"？靠会话状态 + 环境变量回写，而非大模型的输出**：
+会话模式被存为 `'coordinator' | 'normal'`，通过 `saveMode()` 写入
+（[conversation.ts:230-237](src/commands/clear/conversation.ts#L230-L237)、[main.tsx:3776-3777](src/main.tsx#L3776-L3777)）；
+恢复会话时 `matchSessionMode()` 会**改写环境变量** `CLAUDE_CODE_COORDINATOR_MODE` 去匹配保存的模式
+（[coordinatorMode.ts:49-78](src/coordinator/coordinatorMode.ts#L49-L78)），使 `isCoordinatorMode()` 在下一生命周期仍为真。
+这个框架依赖的是会话状态 + env 回写，与 LLM 的任何推理输出无关。
+
+**Coordinator 默认开启吗？——不。它是"双重门控"，且默认关闭**：
+
+1. **编译期**：`feature('COORDINATOR_MODE')`（来自 `bun:bundle`）在**外部分发版为 `false`**，
+   `feature('COORDINATOR_MODE') ? require('...') : null` 的 DCE 条件导入（[main.tsx:76](src/main.tsx#L76)）
+   会把整个 coordinator 模块在打包阶段删除，外部产物中**根本不存在**该代码；
+2. **运行期**：即便某构建（ant）启用该 feature，`isCoordinatorMode()` 仍需
+   `isEnvTruthy(process.env.CLAUDE_CODE_COORDINATOR_MODE)` 为真（[coordinatorMode.ts:36-41](src/coordinator/coordinatorMode.ts#L36-L41)），
+   而该环境变量默认不设置。
+
+**对外默认版是否"只有 subagent 一种多智能体机制"？——严格上是的（开箱即用层面），但三种状态不同**：
+
+| 机制 | 对外默认版状态 | 能否开启 |
+| ---- | -------------- | -------- |
+| **Subagent** | ✅ 默认可用（无需配置） | 无条件存在 |
+| **Swarm / Team** | ⛔ 默认关 | 可：`--agent-teams` / `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` + `tengu_amber_flint` |
+| **Coordinator** | ❌ 产物中不存在（编译期 DCE） | 外部版不可用 |
+| **Remote / CCR** | ⛔ 默认关 | 可：登录 claude.ai + 配置云端环境 + 安装 GitHub app（[RemoteAgentTask.tsx:148-160](src/tasks/RemoteAgentTask/RemoteAgentTask.tsx#L148-L160)） |
+
+**关键区分：两种"关"的本质不同**——
+
+- **Coordinator 是唯一被编译期"杀死"的特性**，对外版从二进制层面不存在，无法开启；
+- **Swarm 与 Remote 是"代码还在、默认不激活"**：Swarm 靠运行时 env/flag + GrowthBook，
+  Remote 靠登录/云端环境/GitHub app 的**资格检查**（`not_logged_in`/`no_remote_environment`/
+  `not_in_git_repo`/`no_git_remote`/`github_app_not_installed`/`policy_blocked`，[RemoteAgentTask.tsx:148-160](src/tasks/RemoteAgentTask/RemoteAgentTask.tsx#L148-L160)），
+  均无 `USER_TYPE==='ant'` 硬门槛，因此是对**外部开放**的公开能力，只是默认不触发。
+
+**一句话总结**：对外默认版唯一"开箱即用"的多智能体机制确实只有 **Subagent**；
+Swarm 与 Remote 是"代码存在、默认关、可配置开启"的公开能力，只有 Coordinator 是被编译期彻底移除、
+外部版完全不可用的那一个。三种模式的"边界"本质是**配置门控**，而非 LLM 的任务判断。
+
+#### 4.7.1 澄清：Coordinator 与 Subagent 不是"两种机制"，而是"身份模式 ↔ 底层机制"
+
+常有人问："coordinator 和 subagent 不都是一个 agent 调另一个 agent 吗，有什么区别？"
+这个疑问源于**把两个不同层级的抽象摆在了同一台面上**。二者的差别不在"怎么调用"，
+而在**主 agent 被配置成了什么身份、手里剩下哪些工具**：
+
+| 概念 | 层级 | 是什么 |
+| ---- | ---- | ------ |
+| **Subagent** | **机制层** | `Agent` 工具 + `subagent_type`，任何主 agent 都能调用，是最基础的"一个 agent 调用另一个 agent" |
+| **Coordinator 模式** | **身份/运行模式层** | 主 agent 换上专门的协调者 system prompt + 被裁剪的工具集，**被刻意限定成"专职派发 subagent（worker）"的角色** |
+
+**Coordinator 的 worker 本身就是 subagent**。证据链：
+
+- 协调者 system prompt 明确指示：用 `Agent` 工具时传 `subagent_type: 'worker'`，并示范并行 fan-out
+  （[coordinatorMode.ts:194](src/coordinator/coordinatorMode.ts#L194)）；
+- `WORKER_AGENT = 'worker'`（[workerAgent.ts:1](src/coordinator/workerAgent.ts#L1)），
+  且 coordinator 开启时 `getBuiltInAgents()` 返回 coordinator 专属的 agents 组
+  （[builtInAgents.ts:35-41](src/tools/AgentTool/builtInAgents.ts#L35-L41)）。
+
+所以"coordinator 调 worker"在机制上**就是主 agent 通过 `Agent` 工具调 subagent**——同一套执行系统、
+同一个 query 循环。二者共享底层机制，区别全在于**包裹它的角色/权限/工具环境**。
+
+**真正的差异在"主 agent 自己"身上**：
+
+| | 普通 subagent 场景 | Coordinator 模式 |
+| -- | ----------------- | ---------------- |
+| 主 agent 工具集 | 完整（Bash/Read/Edit/Agent/MCP…） | 被裁剪成 `Agent + TaskStop + SendMessage + SyntheticOutput`（[constants/tools.ts:107-112](src/constants/tools.ts#L107-L112)） |
+| 主 agent 能否直接干活 | 能，工具齐全 | **不能直接改文件**——没有 Bash/Read/Edit，只能派发 worker |
+| 系统提示词 | 通用助手提示词 | `getCoordinatorSystemPrompt()`，教它拆任务/并行派发/综合结果（[coordinatorMode.ts:111-369](src/coordinator/coordinatorMode.ts#L111-L369)） |
+| 定位 | 按需调用 subagent 的助手 | **被强制限定成编排中心/调度员** |
+
+一句话分清：**subagent 是"机制"（Agent 工具），coordinator 是"主 agent 的一种身份模式"**
+——它本身不创造新机制，而是通过**裁剪工具 + 更换编排提示词**，把自己特化成"只靠 subagent 机制干活"的调度者。
+拿复印机打比方：subagent 是"你会用复印机（Agent 工具）"，coordinator 是"把你关进只有一台复印机的房间、
+再给你一本《复印机调度员手册》"——复印的机制没变，变的是你的身份被限定成了复印机调度员。
+
+---
 
 这是范围最新、最"不同"的一层：**把智能体执行迁移到 Claude.ai 云端会话**，本地 CLI 不再跑 LLM 循环，
 只负责创建/恢复云端会话并轮询结果。
@@ -536,13 +669,13 @@ const REMOTE_TASK_TYPES = ['remote-agent', 'ultraplan', 'ultrareview', 'autofix-
 ```
 
 `RemoteAgentTaskState`（[RemoteAgentTask.tsx:22-59](src/tasks/RemoteAgentTask/RemoteAgentTask.tsx#L22-L59)）携带
-`remoteTaskType / sessionId / command / title / todoList / log / isLongRunning / pollStartedAt /
-isRemoteReview / reviewProgress / isUltraplan / ultraplanPhase`。每种子类型可注册**完成判定器**（completion checker），
+`remoteTaskType / sessionId / command / title / todoList / log / isLongRunning / pollStartedAt / isRemoteReview / reviewProgress / isUltraplan / ultraplanPhase`。每种子类型可注册**完成判定器**（completion checker），
 用于判定"何时算完成"（返回非 null 字符串即完成）。
 
 ### 5.2 触发与前置校验
 
 触发来源三处（grep 确认）：
+
 - `Agent` 工具 `isolation: 'remote'`（ant 专用）→ `remoteTaskType: 'remote-agent'`（[AgentTool.tsx:456](src/tools/AgentTool/AgentTool.tsx#L456)）；
 - `/ultraplan` 命令 → `'ultraplan'`（[ultraplan.tsx:368](src/commands/ultraplan.tsx#L368)）；
 - `/ultrareview` 命令 → `'ultrareview'`（[reviewRemote.ts:298](src/commands/review/reviewRemote.ts#L298)）。
@@ -553,11 +686,12 @@ isRemoteReview / reviewProgress / isUltraplan / ultraplanPhase`。每种子类�
 ### 5.3 通信与运行机制：teleport + 事件轮询
 
 **teleport**（[utils/teleport.tsx](src/utils/teleport.tsx)）：
+
 - `teleportToRemote`（[teleport.tsx:730](src/utils/teleport.tsx#L730)）创建 Claude.ai 会话，两种模式：
   - **GitHub 模式**：后端从 origin 克隆（需 GitHub remote + CCR GitHub 连接）；
   - **Bundle 模式**（`CCR_FORCE_BUNDLE=1`）：CLI 本地 `git bundle --all`、经 Files API 上传、
     传 `seed_bundle_file_id`——无需 GitHub，本地仓库也能上云。
-  标题/分支名生成委托给一次 Haiku 调用（`generateTitleAndBranch`）。
+    标题/分支名生成委托给一次 Haiku 调用（`generateTitleAndBranch`）。
 
 **关键点**：CLI **不**在本地跑该智能体的 LLM 循环。`registerRemoteAgentTask`
 （[RemoteAgentTask.tsx:386](src/tasks/RemoteAgentTask/RemoteAgentTask.tsx#L386)）建 task 后，
@@ -583,14 +717,14 @@ RemoteAgentTaskState.log/Pill UI**。完成判定：普通远程任务按结果�
 
 ### 5.5 与本地多智能体对比
 
-| 维度 | 本地 Subagent / Swarm | Remote / CCR |
-|------|----------------------|--------------|
-| 执行位置 | 本机进程 | Claude.ai 云端（CCR） |
-| LLM 循环 | 本地 `query()` | 云端跑，本地只轮询 events |
-| 触发 | `Agent` 工具 `subagent_type` | `isolation:'remote'`、`/ultraplan`、`/ultrareview` 等 |
-| 传输 | 内存 / 文件 / mailbox | HTTPS 轮询 `/v1/sessions/{id}/events` |
-| 前置 | 无 | 需登录、远程环境、git remote / bundle |
-| 持久 | 会话内 | sidecar + 云端会话，可跨重启恢复 |
+| 维度     | 本地 Subagent / Swarm            | Remote / CCR                                                |
+| -------- | -------------------------------- | ----------------------------------------------------------- |
+| 执行位置 | 本机进程                         | Claude.ai 云端（CCR）                                       |
+| LLM 循环 | 本地`query()`                  | 云端跑，本地只轮询 events                                   |
+| 触发     | `Agent` 工具 `subagent_type` | `isolation:'remote'`、`/ultraplan`、`/ultrareview` 等 |
+| 传输     | 内存 / 文件 / mailbox            | HTTPS 轮询`/v1/sessions/{id}/events`                      |
+| 前置     | 无                               | 需登录、远程环境、git remote / bundle                       |
+| 持久     | 会话内                           | sidecar + 云端会话，可跨重启恢复                            |
 
 ---
 
@@ -599,14 +733,14 @@ RemoteAgentTaskState.log/Pill UI**。完成判定：普通远程任务按结果�
 ### 6.1 local_agent 生命周期（AgentTool.tsx / LocalAgentTask.tsx）
 
 两种 spawn 路径：
+
 - **异步/后台**（[AgentTool.tsx:688](src/tools/AgentTool/AgentTool.tsx#L688)）：`registerAsyncAgent` +
   `runAsyncAgentLifecycle`，**立即** `isBackgrounded: true`，后台跑、完成时通知；
 - **同步/前台**（[AgentTool.tsx:819](src/tools/AgentTool/AgentTool.tsx#L819)）：`registerAgentForeground`，
   带 `autoBackgroundMs` 超时 + `backgroundSignal` promise，超时后 UI 提供 `ctrl+b` 转后台。
 
 关键状态字段（`LocalAgentTaskState`，[LocalAgentTask.tsx:116-148](src/tasks/LocalAgentTask/LocalAgentTask.tsx#L116-L148)）：
-`agentId / agentType / abortController / progress / result / messages / isBackgrounded /
-pendingMessages / retain / diskLoaded / evictAfter`。
+`agentId / agentType / abortController / progress / result / messages / isBackgrounded / pendingMessages / retain / diskLoaded / evictAfter`。
 
 **完成/失败/杀除**：`completeAgentTask` / `failAgentTask` 设 `evictAfter`（尊重 `retain`）；
 `killAsyncAgent`（[LocalAgentTask.tsx:281](src/tasks/LocalAgentTask/LocalAgentTask.tsx#L281)）置 `killed` +
@@ -636,6 +770,7 @@ pendingMessages / retain / diskLoaded / evictAfter`。
 `agentType: 'subagent' | 'teammate'` 判别。
 
 与此相关的一些支撑：
+
 - **agentId**（`utils/agentId.ts`）：agent ID `agentName@teamName`；request ID
   `{requestType}-{timestamp}@{agentId}`，确定性 ID 支撑崩溃重连。
 - **模型解析**（`utils/model/agent.ts`）：`getDefaultSubagentModel() → 'inherit'`；
@@ -645,24 +780,24 @@ pendingMessages / retain / diskLoaded / evictAfter`。
 
 ## 七、代码位置速查表
 
-| 主题 | 关键文件 |
-|------|---------|
-| 任务类型/ID/注册表 | [Task.ts](src/Task.ts)、[tasks.ts](src/tasks.ts) |
-| Agent 工具（入口） | [AgentTool.tsx](src/tools/AgentTool/AgentTool.tsx)、[runAgent.ts](src/tools/AgentTool/runAgent.ts) |
-| Agent 定义/加载 | [loadAgentsDir.ts](src/tools/AgentTool/loadAgentsDir.ts)、[builtInAgents.ts](src/tools/AgentTool/builtInAgents.ts) |
-| 工具过滤/结果 | [agentToolUtils.ts](src/tools/AgentTool/agentToolUtils.ts) |
-| Fork/续跑/记忆/UI | [forkSubagent.ts](src/tools/AgentTool/forkSubagent.ts)、[resumeAgent.ts](src/tools/AgentTool/resumeAgent.ts)、[agentMemory.ts](src/tools/AgentTool/agentMemory.ts)、[agentMemorySnapshot.ts](src/tools/AgentTool/agentMemorySnapshot.ts)、[UI.tsx](src/tools/AgentTool/UI.tsx) |
-| 上下文隔离/模型/工作树 | [forkedAgent.ts](src/utils/forkedAgent.ts)、[model/agent.ts](src/utils/model/agent.ts)、[worktree.ts](src/utils/worktree.ts) |
-| Swarm 门控 | [agentSwarmsEnabled.ts](src/utils/agentSwarmsEnabled.ts) |
-| Swarm 后端 | [backends/](src/utils/swarm/backends/)（types/registry/detection/InProcessBackend/TmuxBackend/ITermBackend/PaneBackendExecutor） |
-| 团队/信箱/权限/重连 | [teamHelpers.ts](src/utils/swarm/teamHelpers.ts)、[teammateMailbox.ts](src/utils/teammateMailbox.ts)、[permissionSync.ts](src/utils/swarm/permissionSync.ts)、[leaderPermissionBridge.ts](src/utils/swarm/leaderPermissionBridge.ts)、[reconnection.ts](src/utils/swarm/reconnection.ts)、[teammateInit.ts](src/utils/swarm/teammateInit.ts) |
-| Spawn/运行时 | [spawnMultiAgent.ts](src/tools/shared/spawnMultiAgent.ts)、[spawnInProcess.ts](src/utils/swarm/spawnInProcess.ts)、[inProcessRunner.ts](src/utils/swarm/inProcessRunner.ts) |
-| 团队工具 | TeamCreateTool、SendMessageTool、[promptAddendum.ts](src/utils/swarm/teammatePromptAddendum.ts) |
-| 团队任务分配 | [utils/tasks.ts](src/utils/tasks.ts)（claimTask/unassignTeammateTasks） |
-| Coordinator | [coordinatorMode.ts](src/coordinator/coordinatorMode.ts)、[workerAgent.ts](src/coordinator/workerAgent.ts) |
-| 远程/CCR | [RemoteAgentTask.tsx](src/tasks/RemoteAgentTask/RemoteAgentTask.tsx)、[teleport.tsx](src/utils/teleport.tsx)、[ultraplan.tsx](src/commands/ultraplan.tsx)、[reviewRemote.ts](src/commands/review/reviewRemote.ts) |
-| local_agent 任务/UI | [LocalAgentTask.tsx](src/tasks/LocalAgentTask/LocalAgentTask.tsx)、[BackgroundTask.tsx](src/components/tasks/BackgroundTask.tsx)、[CoordinatorAgentStatus.tsx](src/components/CoordinatorAgentStatus.tsx) |
-| 并发归属 | [agentContext.ts](src/utils/agentContext.ts)、[agentId.ts](src/utils/agentId.ts) |
+| 主题                   | 关键文件                                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 任务类型/ID/注册表     | [Task.ts](src/Task.ts)、[tasks.ts](src/tasks.ts)                                                                                                                                                                                                                                                                                         |
+| Agent 工具（入口）     | [AgentTool.tsx](src/tools/AgentTool/AgentTool.tsx)、[runAgent.ts](src/tools/AgentTool/runAgent.ts)                                                                                                                                                                                                                                       |
+| Agent 定义/加载        | [loadAgentsDir.ts](src/tools/AgentTool/loadAgentsDir.ts)、[builtInAgents.ts](src/tools/AgentTool/builtInAgents.ts)                                                                                                                                                                                                                       |
+| 工具过滤/结果          | [agentToolUtils.ts](src/tools/AgentTool/agentToolUtils.ts)                                                                                                                                                                                                                                                                              |
+| Fork/续跑/记忆/UI      | [forkSubagent.ts](src/tools/AgentTool/forkSubagent.ts)、[resumeAgent.ts](src/tools/AgentTool/resumeAgent.ts)、[agentMemory.ts](src/tools/AgentTool/agentMemory.ts)、[agentMemorySnapshot.ts](src/tools/AgentTool/agentMemorySnapshot.ts)、[UI.tsx](src/tools/AgentTool/UI.tsx)                                                              |
+| 上下文隔离/模型/工作树 | [forkedAgent.ts](src/utils/forkedAgent.ts)、[model/agent.ts](src/utils/model/agent.ts)、[worktree.ts](src/utils/worktree.ts)                                                                                                                                                                                                              |
+| Swarm 门控             | [agentSwarmsEnabled.ts](src/utils/agentSwarmsEnabled.ts)                                                                                                                                                                                                                                                                                |
+| Swarm 后端             | [backends/](src/utils/swarm/backends/)（types/registry/detection/InProcessBackend/TmuxBackend/ITermBackend/PaneBackendExecutor）                                                                                                                                                                                                        |
+| 团队/信箱/权限/重连    | [teamHelpers.ts](src/utils/swarm/teamHelpers.ts)、[teammateMailbox.ts](src/utils/teammateMailbox.ts)、[permissionSync.ts](src/utils/swarm/permissionSync.ts)、[leaderPermissionBridge.ts](src/utils/swarm/leaderPermissionBridge.ts)、[reconnection.ts](src/utils/swarm/reconnection.ts)、[teammateInit.ts](src/utils/swarm/teammateInit.ts) |
+| Spawn/运行时           | [spawnMultiAgent.ts](src/tools/shared/spawnMultiAgent.ts)、[spawnInProcess.ts](src/utils/swarm/spawnInProcess.ts)、[inProcessRunner.ts](src/utils/swarm/inProcessRunner.ts)                                                                                                                                                               |
+| 团队工具               | TeamCreateTool、SendMessageTool、[promptAddendum.ts](src/utils/swarm/teammatePromptAddendum.ts)                                                                                                                                                                                                                                         |
+| 团队任务分配           | [utils/tasks.ts](src/utils/tasks.ts)（claimTask/unassignTeammateTasks）                                                                                                                                                                                                                                                                 |
+| Coordinator            | [coordinatorMode.ts](src/coordinator/coordinatorMode.ts)、[workerAgent.ts](src/coordinator/workerAgent.ts)                                                                                                                                                                                                                               |
+| 远程/CCR               | [RemoteAgentTask.tsx](src/tasks/RemoteAgentTask/RemoteAgentTask.tsx)、[teleport.tsx](src/utils/teleport.tsx)、[ultraplan.tsx](src/commands/ultraplan.tsx)、[reviewRemote.ts](src/commands/review/reviewRemote.ts)                                                                                                                          |
+| local_agent 任务/UI    | [LocalAgentTask.tsx](src/tasks/LocalAgentTask/LocalAgentTask.tsx)、[BackgroundTask.tsx](src/components/tasks/BackgroundTask.tsx)、[CoordinatorAgentStatus.tsx](src/components/CoordinatorAgentStatus.tsx)                                                                                                                                 |
+| 并发归属               | [agentContext.ts](src/utils/agentContext.ts)、[agentId.ts](src/utils/agentId.ts)                                                                                                                                                                                                                                                         |
 
 ---
 
